@@ -1,0 +1,14 @@
+[features]
+seeds = false
+[programs.localnet]
+close_account = "DgXwx6Pz4fg3Si6zbt581SRd85XohCL64pay2DeWras5"
+
+[registry]
+url = "https://anchor.projectserum.com"
+
+[provider]
+cluster = "localnet"
+wallet = "wallet.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
