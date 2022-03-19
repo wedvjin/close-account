@@ -2,13 +2,14 @@ import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
 import { CloseAccount } from '../target/types/close_account';
 
-import { TOKEN_PROGRAM_ID, Token } from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID, createMint, getOrCreateAssociatedTokenAccount, mintTo, transfer } from "@solana/spl-token";
 
 const provider = anchor.Provider.local();
 const authority = anchor.web3.Keypair.generate();
 
-let mint = null as Token;
+let mint = null as anchor.web3.PublicKey;
 let randomToken = null as anchor.web3.PublicKey;
+let tokenAccount;
 
 // let programsVaults = null as anchor.web3.PublicKey;
 // let programsData = null as anchor.web3.PublicKey;
@@ -32,14 +33,14 @@ describe('close-account', () => {
       await provider.connection.requestAirdrop(authority.publicKey, 3 * anchor.web3.LAMPORTS_PER_SOL),
       "processed"
     );
-    mint = await Token.createMint(
-      provider.connection,
-      authority,
-      authority.publicKey,
-      null,
-      5,
-      TOKEN_PROGRAM_ID
-    );
+    // mint = await Token.createMint(
+    //   provider.connection,
+    //   authority,
+    //   authority.publicKey,
+    //   null,
+    //   5,
+    //   TOKEN_PROGRAM_ID
+    // );
     // randomToken = await mint.createAccount(authority.publicKey);
     // await mint.mintTo(
     //   randomToken,
@@ -47,12 +48,35 @@ describe('close-account', () => {
     //   [authority],
     //   10000000 // 100
     // );
+    mint = await createMint(
+      provider.connection, 
+      authority, 
+      authority.publicKey, 
+      null, 
+      5,
+      );
+    tokenAccount = await getOrCreateAssociatedTokenAccount(
+      provider.connection,
+        authority,
+        mint,
+        authority.publicKey
+    );
+    let signature = await mintTo(
+      provider.connection,
+        authority,
+        mint,
+        tokenAccount.address,
+        authority.publicKey,
+        1000000000, //1000
+        []
+    );
+
     [programsDataAccount, programsDataAccount_bump] = await anchor.web3.PublicKey.findProgramAddress(
       [anchor.utils.bytes.utf8.encode("data"),authority.publicKey.toBuffer()],
       program.programId
     );
     [programsVaultsAccount, programsVaultsAccount_bump] = await anchor.web3.PublicKey.findProgramAddress(
-      [anchor.utils.bytes.utf8.encode("vault"),mint.publicKey.toBuffer()],
+      [anchor.utils.bytes.utf8.encode("vault"),mint.toBuffer()],
       program.programId
     );
   });
@@ -73,7 +97,7 @@ describe('close-account', () => {
     		accounts: {
 
     			authority: authority.publicKey,
-		      mint: mint.publicKey,
+		      mint: mint,
 		      programsVault: programsVaultsAccount,
 		      programsData: programsDataAccount,
 
@@ -84,6 +108,7 @@ describe('close-account', () => {
     		signers: [authority],
     	});
     console.log("Your transaction signature", tx);
+    //try to find programsVauls
   });
   it('Close', async () => {
     // Add your test here.
@@ -91,7 +116,7 @@ describe('close-account', () => {
     	{
     		accounts: {
     			authority: authority.publicKey,
-		      mint: mint.publicKey,
+		      mint: mint,
 		      programsVault: programsVaultsAccount,
 		      programsData: programsDataAccount,
     			tokenProgram: TOKEN_PROGRAM_ID,
@@ -101,5 +126,6 @@ describe('close-account', () => {
     		signers: [authority],
     	});
     console.log("Your transaction signature", tx);
+    //try to find programsVauls
   });
 });

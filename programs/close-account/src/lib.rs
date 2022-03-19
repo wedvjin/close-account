@@ -21,15 +21,16 @@ pub mod close_account {
             anchor_spl::token::CloseAccount {
                 account: ctx.accounts.programs_vault.to_account_info(),
                 destination: ctx.accounts.authority.to_account_info(),
-                authority: ctx.accounts.authority.to_account_info(),
+                authority: ctx.accounts.programs_data.to_account_info(),
             }
         );
 
-        let tokens_bump = ctx.accounts.programs_data.tokens_bump;
+        let bump = ctx.accounts.programs_data.bump;
 
-        let seeds = &[b"vault".as_ref(), 
-            &[tokens_bump]];
-
+        let seeds = &[b"data".as_ref(), 
+        	ctx.accounts.authority.key.as_ref(),
+            &[bump]];
+		
         anchor_spl::token::close_account(cpi_ctx.with_signer(&[&seeds[..]]), )?;
 
         Ok(())
@@ -45,7 +46,7 @@ pub struct Initialize<'info> {
 		init,
 		payer = authority,
         token::mint = mint,
-        token::authority = authority,
+        token::authority = programs_data,
 		seeds = [b"vault".as_ref(),mint.key.as_ref()],
 		bump,
 		)]
